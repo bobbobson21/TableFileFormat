@@ -1,0 +1,9 @@
+﻿  TblFF.cpp
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.37.32822\include\filesystem(13): warning STL4038: The contents of <filesystem> are available only with C++17 or later.
+  TblFile.cpp
+C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.37.32822\include\filesystem(13): warning STL4038: The contents of <filesystem> are available only with C++17 or later.
+C:\Users\dsbkh\OneDrive\Desktop\github projects\TableFileFormat\TblFileFormat\TblFile.cpp(89,37): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\dsbkh\OneDrive\Desktop\github projects\TableFileFormat\TblFileFormat\TblFile.cpp(243,40): warning C4267: '+=': conversion from 'size_t' to 'int', possible loss of data
+  TblTree.cpp
+  Generating Code...
+  TblFF.vcxproj -> C:\Users\dsbkh\OneDrive\Desktop\github projects\TableFileFormat\x64\Debug\TblFF.exe
