@@ -110,12 +110,12 @@ int TblFile::ReadHeaderLength()
 		char NewLetter;
 		FileReader.read(&NewLetter, 1);
 
-		if (NewLetter == '}') //found start of header //do this after adding letters to header string so we dont add it to header data string
+		HeaderLengthCount++;
+
+		if (NewLetter == '}') //found end of headers size
 		{
 			return HeaderLengthCount;
 		}
-
-		HeaderLengthCount++;
 	}
 }
 
@@ -154,7 +154,9 @@ void TblFile::CloseW()
 
 std::map<std::string, std::string> TblFile::ReadMap()
 {
+	FileReader.seekg(std::ios::beg);
 	int HeaderLength = ReadHeaderLength();
+
 	FileReader.seekg(std::ios::beg); //so we are back to the header
 	std::vector<TblHeaderDataResult> Results = ReadHeaderData();
 
@@ -165,7 +167,8 @@ std::map<std::string, std::string> TblFile::ReadMap()
 		char* TempDataDelete = new char[Results[i].EndPos - Results[i].StartPos]; //creates space to read file info into
 		std::string ResultName = Results[i].Key.substr(1, Results[i].Key.size() - 2);
 
-		FileReader.seekg(Results[i].StartPos + HeaderLength);
+		int NewPos = Results[i].StartPos + HeaderLength;
+		FileReader.seekg(NewPos);
 		FileReader.read(TempDataDelete, Results[i].EndPos - Results[i].StartPos); //reads out file to valid format
 
 		ReturnData[ResultName] = "";
@@ -232,7 +235,7 @@ void TblFile::WriteMap(std::map<std::string, std::string> Map)
 	FileDataOut.push_back("{");
 	FileDataOut.push_back("\n\n");
 
-	int CurrentFileByteCout = 3; //new lines also this dosent take into a count the header data
+	int CurrentFileByteCout = 2; //new lines also this dosent take into a count the header data
 	for (std::map<std::string, std::string>::iterator i = Map.begin(); i != Map.end(); ++i)
 	{
 		FileDataOut.push_back(i->second);
@@ -240,7 +243,8 @@ void TblFile::WriteMap(std::map<std::string, std::string> Map)
 		std::string NewHeaderContent = (std::string(1, '"')) + i->first + (std::string(1, '"')) + ", " + std::to_string(CurrentFileByteCout) + ", " + std::to_string(CurrentFileByteCout + i->second.size()) + ";";
 		FileDataOut[0] += NewHeaderContent;
 
-		CurrentFileByteCout += i->second.size(); //+ 5; //add due to new lines
+		FileDataOut.push_back("\n\n");
+		CurrentFileByteCout += i->second.size() + 2;
 	}
 	FileDataOut[0][FileDataOut[0].size() -1] = '}'; //ends header write
 
