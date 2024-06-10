@@ -1,0 +1,4 @@
+﻿  TblFile.cpp
+C:\Users\dsbkh\OneDrive\Desktop\github projects\TableFileFormat\AsDll\TblFile.cpp(90,37): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\dsbkh\OneDrive\Desktop\github projects\TableFileFormat\AsDll\TblFile.cpp(258,43): warning C4267: '+=': conversion from 'size_t' to 'int', possible loss of data
+  AsDll.vcxproj -> C:\Users\dsbkh\OneDrive\Desktop\github projects\TableFileFormat\AsDll\x64\Debug\AsDll.dll

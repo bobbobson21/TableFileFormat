@@ -1,4 +1,0 @@
-﻿  TblFile.cpp
-C:\Users\dsbkh\OneDrive\Desktop\github projects\TableFileFormat\TblFileFormat\TblFile.cpp(89,37): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
-C:\Users\dsbkh\OneDrive\Desktop\github projects\TableFileFormat\TblFileFormat\TblFile.cpp(247,43): warning C4267: '+=': conversion from 'size_t' to 'int', possible loss of data
-  TblFF.vcxproj -> C:\Users\dsbkh\OneDrive\Desktop\github projects\TableFileFormat\x64\Debug\TblFF.exe
