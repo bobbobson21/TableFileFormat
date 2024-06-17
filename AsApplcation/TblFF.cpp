@@ -24,10 +24,10 @@ int main()
     TblContainer Nest = TblContainer();
     TblContainer Vest = TblContainer();
 
-    Nessed.SetData("gg");
-    Test.SetData("ggg");
-    Nest.SetData("gggg");
-    Vest.SetData("ggggg");
+    Nessed.SetData("@234");
+    Test.SetData("1@34");
+    Nest.SetData("12@4");
+    Vest.SetData("123@");
 
     Blessed.Add("Nessed", Nessed);
     MainTable.Add("Blessed", Blessed);
@@ -35,7 +35,7 @@ int main()
     MainTable.Add("Nest", Nest);
     MainTable.Add("Vest", Vest);
 
-    TblFileWrite.OpenW("TableData.tbl");
+    TblFileWrite.OpenW("TableData.tbl", TblCompactionLevel::Tbl_CompactionLevel_Medium);
     TblFileWrite.WriteTable(MainTable);
     TblFileWrite.CloseW();
 

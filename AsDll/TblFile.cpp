@@ -85,13 +85,18 @@ std::vector<TblHeaderDataResult> TblFile::ReadHeaderData()
 	{
 		try
 		{
-			HeaderReturnData.push_back(TblHeaderDataResult());
+			
 			std::vector<std::string> CurrentHeaderDataLine = SplitStringIntoVector(HeaderDataSplited[i], ",");
-			int CurrentHeaderDataResultIndex = HeaderReturnData.size() - 1;
 
-			HeaderReturnData[CurrentHeaderDataResultIndex].Key = CurrentHeaderDataLine[0]; //where am I and what am I
-			HeaderReturnData[CurrentHeaderDataResultIndex].StartPos = stoi(CurrentHeaderDataLine[1]); //where are my contents
-			HeaderReturnData[CurrentHeaderDataResultIndex].EndPos = stoi(CurrentHeaderDataLine[2]); //where are my contents + how big are they
+			if (CurrentHeaderDataLine.size() >= 3)
+			{
+				HeaderReturnData.push_back(TblHeaderDataResult());
+				int CurrentHeaderDataResultIndex = HeaderReturnData.size() - 1;
+
+				HeaderReturnData[CurrentHeaderDataResultIndex].Key = CurrentHeaderDataLine[0]; //where am I and what am I
+				HeaderReturnData[CurrentHeaderDataResultIndex].StartPos = stoi(CurrentHeaderDataLine[1]); //where are my contents
+				HeaderReturnData[CurrentHeaderDataResultIndex].EndPos = stoi(CurrentHeaderDataLine[2]); //where are my contents + how big are they
+			}
 		}
 		catch(...)
 		{
@@ -130,6 +135,94 @@ int TblFile::ReadHeaderLength()
 }
 
 
+void TblFile::WriteLowCompaction(std::map<std::string, std::string> Map)
+{
+	std::vector<std::string> FileDataOut = std::vector<std::string>();
+
+	FileDataOut.push_back("{");
+	FileDataOut.push_back("\n\n");
+
+	int CurrentFileByteCout = 2; //new lines also this dosent take into a count the header data
+	for (std::map<std::string, std::string>::iterator i = Map.begin(); i != Map.end(); ++i)
+	{
+		FileDataOut.push_back(i->second);
+
+		std::string NewHeaderContent = (std::string(1, '"')) + i->first + (std::string(1, '"')) + ", " + std::to_string(CurrentFileByteCout) + ", " + std::to_string(CurrentFileByteCout + i->second.size()) + "; ";
+		FileDataOut[0] += NewHeaderContent;
+
+		FileDataOut.push_back("\n\n");
+		CurrentFileByteCout += i->second.size() + 2;
+	}
+	FileDataOut[0][FileDataOut[0].size() - 2] = '}'; //ends header write
+
+	std::string FileDataOutFinalStage = "";
+	for (size_t i = 0; i < FileDataOut.size(); i++) //compresses vector of strings to single string
+	{
+		FileDataOutFinalStage += FileDataOut[i];
+	}
+
+	FileWrite.clear();
+	FileWrite << FileDataOutFinalStage;
+}
+
+void TblFile::WriteMediumCompaction(std::map<std::string, std::string> Map)
+{
+	std::vector<std::string> FileDataOut = std::vector<std::string>();
+
+	FileDataOut.push_back("{");
+	FileDataOut.push_back("\n\n");
+
+	int CurrentFileByteCout = 2; //new lines also this dosent take into a count the header data
+	for (std::map<std::string, std::string>::iterator i = Map.begin(); i != Map.end(); ++i)
+	{
+		FileDataOut.push_back(i->second);
+
+		std::string NewHeaderContent = (std::string(1, '"')) + i->first + (std::string(1, '"')) + ", " + std::to_string(CurrentFileByteCout) + ", " + std::to_string(CurrentFileByteCout + i->second.size()) + "; ";
+		FileDataOut[0] += NewHeaderContent;
+
+		CurrentFileByteCout += i->second.size();
+	}
+	FileDataOut[0][FileDataOut[0].size() - 2] = '}'; //ends header write
+
+	std::string FileDataOutFinalStage = "";
+	for (size_t i = 0; i < FileDataOut.size(); i++) //compresses vector of strings to single string
+	{
+		FileDataOutFinalStage += FileDataOut[i];
+	}
+
+	FileWrite.clear();
+	FileWrite << FileDataOutFinalStage;
+}
+
+void TblFile::WriteHighCompaction(std::map<std::string, std::string> Map)
+{
+	std::vector<std::string> FileDataOut = std::vector<std::string>();
+
+	FileDataOut.push_back("{");
+
+	int CurrentFileByteCout = 0; //new lines also this dosent take into a count the header data
+	for (std::map<std::string, std::string>::iterator i = Map.begin(); i != Map.end(); ++i)
+	{
+		FileDataOut.push_back(i->second);
+
+		std::string NewHeaderContent = (std::string(1, '"')) + i->first + (std::string(1, '"')) + "," + std::to_string(CurrentFileByteCout) + "," + std::to_string(CurrentFileByteCout + i->second.size()) + ";";
+		FileDataOut[0] += NewHeaderContent;
+
+		CurrentFileByteCout += i->second.size();
+	}
+	FileDataOut[0][FileDataOut[0].size() - 1] = '}'; //ends header write
+
+	std::string FileDataOutFinalStage = "";
+	for (size_t i = 0; i < FileDataOut.size(); i++) //compresses vector of strings to single string
+	{
+		FileDataOutFinalStage += FileDataOut[i];
+	}
+
+	FileWrite.clear();
+	FileWrite << FileDataOutFinalStage;
+}
+
+
 void TblFile::OpenR(char* Path)
 {
 	FileReader.open(Path, std::ios::binary);
@@ -140,14 +233,16 @@ void TblFile::OpenR(std::string Path)
 	FileReader.open(Path, std::ios::binary);
 }
 
-void TblFile::OpenW(char* Path)
+void TblFile::OpenW(char* Path, TblCompactionLevel CompactLevel)
 {
 	FileWrite.open(Path, std::ios::binary);
+	CurrentCompactionLevel = CompactLevel;
 }
 
-void TblFile::OpenW(std::string Path)
+void TblFile::OpenW(std::string Path, TblCompactionLevel CompactLevel)
 {
 	FileWrite.open(Path, std::ios::binary);
+	CurrentCompactionLevel = CompactLevel;
 }
 
 
@@ -241,32 +336,21 @@ void TblFile::ReadExtract(std::string Path)
 
 void TblFile::WriteMap(std::map<std::string, std::string> Map)
 {
-	std::vector<std::string> FileDataOut = std::vector<std::string>();
-
-	FileDataOut.push_back("{");
-	FileDataOut.push_back("\n\n");
-
-	int CurrentFileByteCout = 2; //new lines also this dosent take into a count the header data
-	for (std::map<std::string, std::string>::iterator i = Map.begin(); i != Map.end(); ++i)
+	switch (CurrentCompactionLevel)
 	{
-		FileDataOut.push_back(i->second);
-
-		std::string NewHeaderContent = (std::string(1, '"')) + i->first + (std::string(1, '"')) + ", " + std::to_string(CurrentFileByteCout) + ", " + std::to_string(CurrentFileByteCout + i->second.size()) + ";";
-		FileDataOut[0] += NewHeaderContent;
-
-		FileDataOut.push_back("\n\n");
-		CurrentFileByteCout += i->second.size() + 2;
+	case Tbl_CompactionLevel_Low:
+		WriteLowCompaction(Map);
+		break;
+	case Tbl_CompactionLevel_Medium:
+		WriteMediumCompaction(Map);
+		break;
+	case Tbl_CompactionLevel_High:
+		WriteHighCompaction(Map);
+		break;
+	default:
+		throw "Invalid compaction level data, will not be witten";
+		break;
 	}
-	FileDataOut[0][FileDataOut[0].size() -1] = '}'; //ends header write
-
-	std::string FileDataOutFinalStage = "";
-	for (size_t i = 0; i < FileDataOut.size(); i++) //compresses vector of strings to single string
-	{
-		FileDataOutFinalStage += FileDataOut[i];
-	}
-
-	FileWrite.clear();
-	FileWrite << FileDataOutFinalStage;
 }
 
 void TblFile::WriteTable(TblContainer Table)

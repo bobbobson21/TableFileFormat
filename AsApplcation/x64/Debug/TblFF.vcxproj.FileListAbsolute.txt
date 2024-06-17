@@ -1,2 +1,3 @@
 C:\Users\dsbkh\OneDrive\Desktop\github projects\OpenLibrary\TableFileFormat\TblFF\x64\Debug\TblFF.exe
 C:\Users\dsbkh\OneDrive\Desktop\github projects\TableFileFormat\x64\Debug\TblFF.exe
+C:\Users\dsbkh\OneDrive\Desktop\github projects\TableFileFormat\AsApplcation\x64\Debug\TblFF.exe
