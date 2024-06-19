@@ -2,7 +2,7 @@
 #include <iostream>
 #include "TblFileFormat\TblFile.h"
 
-int main()
+int main() //to do : wite files with the file writer, OpenRM(vector<string>), WriteReadMany,
 {
     std::cout << "Hello World!\n";
 
@@ -39,8 +39,10 @@ int main()
     TblFileWrite.WriteTable(MainTable);
     TblFileWrite.CloseW();
 
+    TblFileWrite.OpenWM();
     TblFileWrite.OpenR("TableData.tbl");
-    AltMap = TblFileWrite.ReadMap();
+    TblFileWrite.ReadWriteManyExtract("C:\\Users\\dsbkh\\OneDrive\\Desktop\\github projects\\TableFileFormat\\AsApplcation\\test\\");
     TblFileWrite.CloseR();
+    TblFileWrite.CloseWM();
 }
 

@@ -134,94 +134,6 @@ int TblFile::ReadHeaderLength()
 }
 
 
-void TblFile::WriteLowCompaction(std::map<std::string, std::string> Map)
-{
-	std::vector<std::string> FileDataOut = std::vector<std::string>();
-
-	FileDataOut.push_back("{");
-	FileDataOut.push_back("\n\n");
-
-	int CurrentFileByteCout = 2; //new lines also this dosent take into a count the header data
-	for (std::map<std::string, std::string>::iterator i = Map.begin(); i != Map.end(); ++i)
-	{
-		FileDataOut.push_back(i->second);
-
-		std::string NewHeaderContent = (std::string(1, '"')) + i->first + (std::string(1, '"')) + ", " + std::to_string(CurrentFileByteCout) + ", " + std::to_string(CurrentFileByteCout + i->second.size()) + "; ";
-		FileDataOut[0] += NewHeaderContent;
-
-		FileDataOut.push_back("\n\n");
-		CurrentFileByteCout += i->second.size() + 2;
-	}
-	FileDataOut[0][FileDataOut[0].size() - 2] = '}'; //ends header write
-
-	std::string FileDataOutFinalStage = "";
-	for (size_t i = 0; i < FileDataOut.size(); i++) //compresses vector of strings to single string
-	{
-		FileDataOutFinalStage += FileDataOut[i];
-	}
-
-	FileWrite.clear();
-	FileWrite << FileDataOutFinalStage;
-}
-
-void TblFile::WriteMediumCompaction(std::map<std::string, std::string> Map)
-{
-	std::vector<std::string> FileDataOut = std::vector<std::string>();
-
-	FileDataOut.push_back("{");
-	FileDataOut.push_back("\n\n");
-
-	int CurrentFileByteCout = 2; //new lines also this dosent take into a count the header data
-	for (std::map<std::string, std::string>::iterator i = Map.begin(); i != Map.end(); ++i)
-	{
-		FileDataOut.push_back(i->second);
-
-		std::string NewHeaderContent = (std::string(1, '"')) + i->first + (std::string(1, '"')) + ", " + std::to_string(CurrentFileByteCout) + ", " + std::to_string(CurrentFileByteCout + i->second.size()) + "; ";
-		FileDataOut[0] += NewHeaderContent;
-
-		CurrentFileByteCout += i->second.size();
-	}
-	FileDataOut[0][FileDataOut[0].size() - 2] = '}'; //ends header write
-
-	std::string FileDataOutFinalStage = "";
-	for (size_t i = 0; i < FileDataOut.size(); i++) //compresses vector of strings to single string
-	{
-		FileDataOutFinalStage += FileDataOut[i];
-	}
-
-	FileWrite.clear();
-	FileWrite << FileDataOutFinalStage;
-}
-
-void TblFile::WriteHighCompaction(std::map<std::string, std::string> Map)
-{
-	std::vector<std::string> FileDataOut = std::vector<std::string>();
-
-	FileDataOut.push_back("{");
-
-	int CurrentFileByteCout = 0; //new lines also this dosent take into a count the header data
-	for (std::map<std::string, std::string>::iterator i = Map.begin(); i != Map.end(); ++i)
-	{
-		FileDataOut.push_back(i->second);
-
-		std::string NewHeaderContent = (std::string(1, '"')) + i->first + (std::string(1, '"')) + "," + std::to_string(CurrentFileByteCout) + "," + std::to_string(CurrentFileByteCout + i->second.size()) + ";";
-		FileDataOut[0] += NewHeaderContent;
-
-		CurrentFileByteCout += i->second.size();
-	}
-	FileDataOut[0][FileDataOut[0].size() - 1] = '}'; //ends header write
-
-	std::string FileDataOutFinalStage = "";
-	for (size_t i = 0; i < FileDataOut.size(); i++) //compresses vector of strings to single string
-	{
-		FileDataOutFinalStage += FileDataOut[i];
-	}
-
-	FileWrite.clear();
-	FileWrite << FileDataOutFinalStage;
-}
-
-
 void TblFile::OpenR(char* Path)
 {
 	FileReader.open(Path, std::ios::binary);
@@ -231,6 +143,36 @@ void TblFile::OpenR(std::string Path)
 {
 	FileReader.open(Path, std::ios::binary);
 }
+
+void TblFile::OpenRM(std::vector<std::string> Paths)
+{
+	ReadManyFilePaths = Paths;
+
+	if (FileReader.is_open() == true)
+	{
+		FileReader.close();
+	}
+}
+
+void TblFile::OpenRM(std::vector<char*> Paths)
+{
+	std::vector<std::string> OutPaths = std::vector<std::string>();
+
+	for (int i = 0; i < Paths.size(); i++)
+	{
+		OutPaths.push_back("");
+
+		for (int o = 0; Paths[i][o] != '\0'; o++)
+		{
+			OutPaths[i] += Paths[i][o];
+		}
+
+		delete[] Paths[i];
+	}
+
+	OpenRM(OutPaths);
+}
+
 
 void TblFile::OpenW(char* Path, TblCompactionLevel CompactLevel)
 {
@@ -244,6 +186,14 @@ void TblFile::OpenW(std::string Path, TblCompactionLevel CompactLevel)
 	CurrentCompactionLevel = CompactLevel;
 }
 
+void TblFile::OpenWM()
+{
+	if (FileWrite.is_open() == true)
+	{
+		FileWrite.close();
+	}
+}
+
 
 void TblFile::CloseR()
 {
@@ -253,6 +203,21 @@ void TblFile::CloseR()
 void TblFile::CloseW()
 {
 	FileWrite.close();
+}
+
+void TblFile::CloseWM()
+{
+	OpenWM();
+}
+
+void TblFile::CloseRM()
+{
+	ReadManyFilePaths.clear();
+
+	if (FileReader.is_open() == true)
+	{
+		FileReader.close();
+	}
 }
 
 
@@ -271,8 +236,7 @@ std::map<std::string, std::string> TblFile::ReadMap()
 		char* TempDataDelete = new char[Results[i].EndPos - Results[i].StartPos]; //creates space to read file info into
 		std::string ResultName = Results[i].Key.substr(1, Results[i].Key.size() - 2);
 
-		int NewPos = Results[i].StartPos + HeaderLength;
-		FileReader.seekg(NewPos);
+		FileReader.seekg(Results[i].StartPos + HeaderLength);
 		FileReader.read(TempDataDelete, Results[i].EndPos - Results[i].StartPos); //reads out file to valid format
 
 		ReturnData[ResultName] = "";
@@ -312,8 +276,13 @@ TblContainer TblFile::ReadTable()
 	return Root;
 }
 
-void TblFile::ReadExtract(std::string Path)
+void TblFile::ReadWriteManyExtract(std::string Path)
 {
+	if (Path[Path.size() - 1] != '\\')
+	{
+		Path += "\\";
+	}
+
 	std::map<std::string, std::string> FileDataOut = ReadMap();
 
 	for (std::map<std::string, std::string>::iterator i = FileDataOut.begin(); i != FileDataOut.end(); ++i)
@@ -328,28 +297,147 @@ void TblFile::ReadExtract(std::string Path)
 			system(("mkdir " + (std::string(1, '"')) + CurrentPath + (std::string(1, '"'))).c_str());
 		}
 
-		system(("echo " + i->second + " >> " + (std::string(1, '"')) + CurrentPath + PathSplited[PathSplited.size() - 1] + (std::string(1, '"'))).c_str());
+		FileWrite.open(CurrentPath + PathSplited[PathSplited.size() - 1]);
+		FileWrite.clear();
+
+		FileWrite.write(i->second.c_str(), i->second.size());
+		FileWrite.close();
+	}
+}
+
+void TblFile::ReadWriteManyExtractInChuncks(std::string Path, int ChunkVolumeSize) //this is to be used for extracting stored files
+{
+	if (Path[Path.size() - 1] != '\\')
+	{
+		Path += "\\";
+	}
+
+	FileReader.seekg(std::ios::beg);
+	int HeaderLength = ReadHeaderLength();
+
+	FileReader.seekg(std::ios::beg); //so we are back to the header
+	std::vector<TblHeaderDataResult> Results = ReadHeaderData();
+
+	for (int i = 0; i < Results.size(); i++) //makes all the folders to put files into
+	{
+		std::vector<std::string> PathSplited = SplitStringIntoVector(Results[i].Key, "/");
+
+		std::string CurrentPath = Path; //path of last folder created ... used to make any folder to go in it
+		for (int o = 0; o < PathSplited.size() - 1; o++) //dose the make foldey part
+		{
+			CurrentPath += PathSplited[o] + "\\";
+			system(("mkdir " + (std::string(1, '"')) + CurrentPath + (std::string(1, '"'))).c_str()); //dose the real make foldy thingy
+		}
+	}
+
+	for (int i = 0; i < Results.size(); i++)
+	{
+		int TotalSize = Results[i].EndPos - Results[i].StartPos;
+		char* TempDataDelete = new char[min(TotalSize, ChunkVolumeSize)]; //creates space to read file info into
+
+		FileReader.seekg(Results[i].StartPos + HeaderLength);
+
+		FileWrite.open(Path + Results[i].Key.substr(1, Results[i].Key.size() -2), std::ios_base::app); //creates file to write to
+		FileWrite.clear(); //if file already exsist empty it
+
+		while (TotalSize > 0)
+		{
+
+			FileReader.read(TempDataDelete, min(TotalSize, ChunkVolumeSize)); //reads out file to valid format
+			FileWrite.write(TempDataDelete, min(TotalSize, ChunkVolumeSize));
+
+			TotalSize = TotalSize - ChunkVolumeSize;
+		}
+
+		FileWrite.close();
+		delete[] TempDataDelete; //deletes temp data
 	}
 }
 
 
 void TblFile::WriteMap(std::map<std::string, std::string> Map)
 {
+	std::vector<std::string> FileDataOut = std::vector<std::string>();
+
+	FileDataOut.push_back("{");
+
+	int CurrentFileByteCout = 0; //new lines also this dosent take into a count the header data
+
 	switch (CurrentCompactionLevel)
 	{
-	case Tbl_CompactionLevel_Low:
-		WriteLowCompaction(Map);
+	case Tbl_CompactionLevel_Low: default:
+		FileDataOut.push_back("\n\n");
+		CurrentFileByteCout = 2;
 		break;
 	case Tbl_CompactionLevel_Medium:
-		WriteMediumCompaction(Map);
+		FileDataOut.push_back("\n\n");
+		CurrentFileByteCout = 2;
 		break;
 	case Tbl_CompactionLevel_High:
-		WriteHighCompaction(Map);
-		break;
-	default:
-		throw "Invalid compaction level data, will not be witten";
+		CurrentFileByteCout = 0;
 		break;
 	}
+
+	for (std::map<std::string, std::string>::iterator i = Map.begin(); i != Map.end(); ++i)
+	{
+		FileDataOut.push_back(i->second);
+
+		std::string NewHeaderContent = "";
+
+		switch (CurrentCompactionLevel)
+		{
+		case Tbl_CompactionLevel_Low: default:
+			NewHeaderContent = (std::string(1, '"')) + i->first + (std::string(1, '"')) + ", " + std::to_string(CurrentFileByteCout) + ", " + std::to_string(CurrentFileByteCout + i->second.size()) + "; ";
+			break;
+		case Tbl_CompactionLevel_Medium:
+			NewHeaderContent = (std::string(1, '"')) + i->first + (std::string(1, '"')) + ", " + std::to_string(CurrentFileByteCout) + ", " + std::to_string(CurrentFileByteCout + i->second.size()) + "; ";
+			break;
+		case Tbl_CompactionLevel_High:
+			NewHeaderContent = (std::string(1, '"')) + i->first + (std::string(1, '"')) + "," + std::to_string(CurrentFileByteCout) + "," + std::to_string(CurrentFileByteCout + i->second.size()) + ";";
+			break;
+		}
+
+		FileDataOut[0] += NewHeaderContent;
+
+		switch (CurrentCompactionLevel)
+		{
+		case Tbl_CompactionLevel_Low: default:
+			CurrentFileByteCout += i->second.size() + 2;
+			FileDataOut.push_back("\n\n");
+			break;
+		case Tbl_CompactionLevel_Medium:
+			CurrentFileByteCout += i->second.size();
+			break;
+		case Tbl_CompactionLevel_High:
+			CurrentFileByteCout += i->second.size();
+			break;
+		}
+	}
+
+	switch (CurrentCompactionLevel)
+	{
+	case Tbl_CompactionLevel_Low: default:
+		FileDataOut[0][FileDataOut[0].size() - 2] = '}'; //ends header write
+		FileDataOut[0].erase(FileDataOut[0].begin() + FileDataOut[0].size() - 1);  //gets rid of pointless space
+		break;
+	case Tbl_CompactionLevel_Medium:
+		FileDataOut[0][FileDataOut[0].size() - 2] = '}'; //ends header write
+		FileDataOut[0].erase(FileDataOut[0].begin() + FileDataOut[0].size() - 1);  //gets rid of pointless space
+		break;
+	case Tbl_CompactionLevel_High:
+		FileDataOut[0][FileDataOut[0].size() - 1] = '}'; //ends header write
+		FileDataOut[0].erase(FileDataOut[0].begin() + FileDataOut[0].size() - 1);  //gets rid of pointless space
+		break;
+	}
+
+	std::string FileDataOutFinalStage = "";
+	for (size_t i = 0; i < FileDataOut.size(); i++) //compresses vector of strings to single string
+	{
+		FileDataOutFinalStage += FileDataOut[i];
+	}
+
+	FileWrite.clear();
+	FileWrite << FileDataOutFinalStage;
 }
 
 void TblFile::WriteTable(TblContainer Table)
@@ -388,4 +476,9 @@ void TblFile::WriteTable(TblContainer Table)
 		PathAsVec.clear();
 		TableMap.clear();
 	}
+}
+
+void TblFile::WriteReadManyCombine()
+{
+	//well be done tomarrow
 }
