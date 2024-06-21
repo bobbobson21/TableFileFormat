@@ -35,14 +35,15 @@ int main() //to do : wite files with the file writer, OpenRM(vector<string>), Wr
     MainTable.Add("Nest", Nest);
     MainTable.Add("Vest", Vest);
 
-    TblFileWrite.OpenW("TableData.tbl", TblCompactionLevel::Tbl_CompactionLevel_Medium);
-    TblFileWrite.WriteTable(MainTable);
+    TblFileWrite.OpenR("TableData.tbl");
+    MainTable = TblFileWrite.ReadTable();
     TblFileWrite.CloseW();
 
-    TblFileWrite.OpenWM();
-    TblFileWrite.OpenR("TableData.tbl");
-    TblFileWrite.ReadWriteManyExtract("C:\\Users\\dsbkh\\OneDrive\\Desktop\\github projects\\TableFileFormat\\AsApplcation\\test\\");
-    TblFileWrite.CloseR();
-    TblFileWrite.CloseWM();
+    TblFileWrite.OpenRM({ "C:\\Users\\dsbkh\\OneDrive\\Desktop\\github projects\\TableFileFormat\\AsApplcation\\test\\wow.txt","C:\\Users\\dsbkh\\OneDrive\\Desktop\\github projects\\TableFileFormat\\AsApplcation\\test\\bob.txt","C:\\Users\\dsbkh\\OneDrive\\Desktop\\github projects\\TableFileFormat\\AsApplcation\\test\\dot\\zog.txt" });
+    TblFileWrite.OpenW("TableData.tbl", TblCompactionLevel::Tbl_CompactionLevel_Medium);
+    TblFileWrite.WriteReadManyCombine(9);
+    TblFileWrite.CloseW();
+    TblFileWrite.CloseRM();
+
 }
 

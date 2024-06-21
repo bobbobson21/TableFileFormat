@@ -30,6 +30,8 @@ private:
 
 	static std::vector<std::string> SplitStringIntoVector(std::string Str, std::string Spl);
 	static std::string RemoveWhitespaceChars(std::string RemoveIn, char ToggleChar ='"');
+	static  std::string RemoveTillOrReplaceBasedOnCharCount(std::string EditIn, int CharCount, char CharToCountOrReplace = '\\', char CountCharReplace = '/' );
+
 	std::vector<TblHeaderDataResult> ReadHeaderData();
 	int ReadHeaderLength();
 
@@ -55,11 +57,12 @@ public:
 	std::map<std::string, std::string> ReadMap();
 	TblContainer ReadTable();
 	void ReadWriteManyExtract(std::string Path);
-	void ReadWriteManyExtractInChuncks(std::string Path, int ChunkVolumeSize = 2048); //this is to be used for extracting stored files
+	void ReadWriteManyExtractInChuncks(std::string Path, int ChunkVolumeSize = 2000000); //this is to be used for extracting stored files
 
 	void WriteMap(std::map<std::string, std::string> Map);
 	void WriteTable(TblContainer Table);
-	void WriteReadManyCombine(); //Combines many files into one tbl file
+	void WriteReadManyCombineInChuncks(int RootIndex = -1, int ChunkVolumeSize = 2000000); //Combines many files into one tbl file also note the root index tells us how may folders should be discareded from the start of all the paths  so if set to 3 and the file pat is something like c:/a/b/c/d/e/file the math it will encode into the file will be d/e/file and if set to -1 it will only be just file
+	void WriteReadManyCombine(int RootIndex = -1); //Combines many files into one tbl file also note the root index tells us how may folders should be discareded from the start of all the paths  so if set to 3 and the file pat is something like c:/a/b/c/d/e/file the math it will encode into the file will be d/e/file and if set to -1 it will only be just file
 };
 
 
